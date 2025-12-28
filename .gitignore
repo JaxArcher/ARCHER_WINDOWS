@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv*/
+venv_windows/
+venv_f5tts/
+
+# Logs
+logs/
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Office files
+*.ods
+
+# Batch files that might be temporary
+test_*.bat
+launch_*.bat
+
+# Assets (if they contain large files)
+assets/

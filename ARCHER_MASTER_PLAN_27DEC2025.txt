@@ -1,0 +1,301 @@
+Here is the compiled project specification document for ARCHER. I have structured it into "Development Pods," grouping related features as you requested. This should provide a clear, actionable plan for your AI programming assistant to begin architecting and delegating tasks.
+
+Project Brief: ARCHER - A Proactive AI Ecosystem
+Objective: To develop ARCHER, a self-hosted, multi-agent AI assistant. ARCHER is designed to be a proactive, conversational, and deeply integrated partner, managing tasks, environment, and personal well-being.
+
+Core Hardware:
+
+GPU: 5080 (Capable of running SOTA local models)
+
+RAM: 256 GB (Sufficient for large model hosting and parallel processing)
+
+Storage: 10 TB (Required for long-term memory, observation logs, and model weights)
+
+Pod 1: Core Interaction (The "Senses" & "Voice" Team)
+This team is responsible for all real-time user I/O. Its primary goal is to make interaction seamless, instantaneous, and natural.
+
+1. Voice Activated (Wake Word)
+Explanation: ARCHER must be in a constant, low-power listening state, waiting for the activation word.
+
+Technical Requirements:
+
+Lightweight, on-device wake-word engine (e.g., Picovoice Porcupine, speechrecognition in background mode, or a custom-trained model).
+
+Access to the primary microphone input.
+
+Implementation:
+
+Run a small, persistent Python script that only listens for the wake word. This minimizes resource use.
+
+Upon detection, this script will act as a trigger, signaling the "Core Intelligence" pod to activate the full STT engine and begin the interaction.
+
+2. Voice Authentication (Biometric Security)
+Explanation: After activation, ARCHER must verify the speaker is the primary user before responding to commands. This permission resets after a 1 minute silence (session end).
+
+Technical Requirements:
+
+A speaker verification model (e.g., speechbrain, pyannote.audio).
+
+A pre-enrolled voice-print (a small audio dataset) of the user.
+
+Implementation:
+
+After the wake word is detected, capture the first 2-3 seconds of user speech.
+
+Run this capture against the stored voice-print.
+
+If the similarity score is above a set threshold, proceed with the interaction.
+
+A session timer resets to zero on any user speech; if it reaches 10 seconds, the "authenticated" state is cleared.
+
+3. Fast Response (STT / TTS)
+Explanation: ARCHER must perform at a conversational level. This includes using human-like filler sounds ("Hmm, one moment...") for processing-heavy tasks and leveraging a SOTA Text-to-Speech (TTS) engine.
+
+Technical Requirements:
+
+STT (Speech-to-Text): A high-speed, locally-run STT model (e.g., a whisper variant optimized for the 5080, like insanely-fast-whisper or whisper.cpp).
+
+TTS (Text-to-Speech): A high-quality, low-latency TTS engine that supports voice cloning and emotional inflection (e.g., F5-TTS, IndexTTS2, Coqui XTTS, StyleTTS 2). The 256 GB RAM is ample for loading these.
+
+Implementation:
+
+Filler Audio: The Orchestrator (Pod 2) should immediately signal the TTS engine to play a pre-selected "pondering" audio file as soon as it receives a query it knows will take >1 second to process.
+
+Streaming: To minimize latency, the LLM (Pod 2) should stream its text response token-by-token directly to the TTS engine, which then generates and plays audio in real-time. This avoids waiting for the full sentence to be generated.
+
+4. Interruption (Barge-In)
+Explanation: The user must be able to interrupt ARCHER while it is speaking, causing it to stop and listen.
+
+Technical Requirements:
+
+Voice Activity Detection (VAD) (e.g., silero-vad).
+
+State management in the Orchestrator.
+
+Implementation:
+
+The microphone listener must remain active even when the TTS engine is playing.
+
+If VAD detects user speech during TTS playback, it sends an "INTERRUPT" signal.
+
+The TTS playback is immediately killed.
+
+The STT engine spins up to capture the user's new input. The Orchestrator must be programmed to handle this context switch gracefully, pausing or canceling its previous task.
+
+Pod 2: Core Intelligence (The "Brain" & "Nervous System" Team)
+This team builds the central coordinator and memory systems that manage all other pods and agents.
+
+1. Orchestrator
+Explanation: The central "router" that receives all inputs, decides which agent (Therapist, Stock Expert, etc.) should handle the task, queries memory for context, and routes the final response.
+
+Technical Requirements:
+
+A powerful central LLM (run locally on the 5080) acting as the main "brain."
+
+An agentic framework (e.g., LangChain, LlamaIndex, or a custom function-calling/tool-using loop).
+
+A message queue (e.g., RabbitMQ, ZeroMQ) for tasks to be passed between agents without blocking.
+
+Implementation:
+
+All inputs (STT, passive observations, remote commands) are formatted and sent to the Orchestrator.
+
+The Orchestrator's LLM uses its prompt (which includes a list of available "tools" or "agents") to decide the next step.
+
+It retrieves relevant context from the Memory (see below), then calls the appropriate agent (e.g., computer_control.open_browser('google.com')).
+
+The agent executes, returns a result, and the Orchestrator formats it for the user (via TTS).
+
+2. Quad-Core Memory System
+Explanation: A comprehensive memory system is required for context, recall, and learning.
+
+Technical Requirements:
+
+Short-Term: The LLM's context window.
+
+Long-Term (Profile): A vector database (e.g., ChromaDB, Weaviate) for storing facts, preferences, and user profile data.
+
+Episodic (Events): A time-series or SQL database (e.g., SQLite, PostgreSQL) to log events: (timestamp, event_summary, user_emotion, key_people).
+
+Semantic (Knowledge): A vector database or knowledge graph (Neo4j) for general facts, concepts, and world knowledge.
+
+Implementation:
+
+After each interaction, a "memory" agent summarizes the conversation.
+
+Facts ("I like Italian food") are embedded and stored in the Long-Term vector DB.
+
+Events ("User had a meeting with 'Jane' at 3 PM") are stored in the Episodic DB.
+
+The Orchestrator queries these databases before every interaction to build a rich, context-aware prompt for the LLM.
+
+3. R&D (Self-Improvement)
+Explanation: ARCHER must actively monitor AI innovations to find adaptable technologies and methods for self-improvement.
+
+Technical Requirements:
+
+Web scraping tools (BeautifulSoup, Scrapy) and API clients.
+
+A "Research" agent with a dedicated LLM instance for summarization and analysis.
+
+Targeted sources: ArXiv, Hugging Face, GitHub, key AI blogs.
+
+Implementation:
+
+A scheduled task (e.g., daily cron job) runs the "R&D" agent.
+
+This agent scrapes its sources for keywords (e.g., "new TTS model," "LLM optimization," "agentic architecture," "5080 GPU").
+
+It summarizes relevant findings and saves them to a "Suggested Upgrades" document for user (your) review. True autonomous self-updating is high-risk; this approach provides an actionable R&D queue.
+
+Pod 3: Environmental Interaction (The "Body" & "Awareness" Team)
+This team is responsible for giving ARCHER awareness of and control over its physical and digital environment.
+
+1. Passive Observation (Sensor Fusion)
+Explanation: ARCHER must constantly monitor webcam and mic feeds to build a rich profile of the user and environment.
+
+Technical Requirements:
+
+OpenCV for webcam access.
+
+A local multi-modal vision model (e.g., Llava, Fuyu-8B) to interpret camera frames.
+
+VAD for ambient audio analysis.
+
+Implementation:
+
+A continuous, low-priority process captures a webcam frame every 5-10 seconds.
+
+The frame is passed to the vision model, which generates a text description ("User is at desk, looks focused," "User is eating").
+
+Ambient mic data is analyzed for tone ("User sounds stressed") or events ("Glass breaking").
+
+These "observations" are fed to the Memory and Therapist agents to build a detailed behavioral log. This has massive storage and privacy implications; the 10TB of storage will be critical.
+
+2. Computer Control
+Explanation: ARCHER must be able to directly control the host PC, with an immediate verbal failsafe.
+
+Technical Requirements:
+
+OS automation libraries (e.g., pyautogui for mouse/keyboard, subprocess for commands, os for files).
+
+A high-priority "HALT" command in the Core Interaction pod.
+
+Implementation:
+
+Create a "Computer" agent with a defined set of functions (move_mouse, type_text, open_app).
+
+The Orchestrator calls this agent based on user commands ("ARCHER, open my email").
+
+The "Core Interaction" (Pod 1) listener must run at a higher priority. If the "HALT" command is heard, it must immediately send a SIGKILL or KeyboardInterrupt to the Computer agent's process.
+
+3. Remote Access
+Explanation: The user must be able to access ARCHER's core functions via a smartphone.
+
+Technical Requirements:
+
+A secure web API (e.g., built with FastAPI or Flask).
+
+A simple web-based frontend (e.g., Streamlit, Gradio, or a basic React app).
+
+Secure authentication (e.g., JWT).
+
+A secure tunneling service (e.g., ngrok for testing, or a self-hosted reverse proxy / VPN for production).
+
+Implementation:
+
+The API exposes a secure endpoint (e.g., /chat) that routes text commands to the Orchestrator.
+
+The web app provides a simple chat interface for the user to log in and interact.
+
+For voice, the app would record audio, send the file to the API, which transcribes it, gets a response, synthesizes the audio, and sends the audio file back.
+
+4. Drone Integration (to be completed at final stage of development)
+Explanation: ARCHER must be able to interface with drones to receive data (video) and potentially issue high-level commands.
+
+Technical Requirements:
+
+Drone SDKs (e.g., DJI SDK, Mavlink, dronekit).
+
+OpenCV for processing the incoming video stream.
+
+Implementation:
+
+Create a "Drone" agent.
+
+This agent handles the connection and communication with the drone's SDK.
+
+It can stream the drone's video feed to the "Passive Observation" vision model for real-time analysis ("The garage door is open," "A package was delivered").
+
+It can accept high-level commands ("Survey the front yard") and translate them into flight plans.
+
+Pod 4: Proactive Agents (The "Specialist" Team)
+This team builds the high-level, goal-oriented agents that fulfill ARCHER's roles as an assistant, therapist, trainer, and expert.
+
+1. Assistant
+Explanation: Manages day-to-day tasks: reminders, email/text monitoring, and local search.
+
+Technical Requirements:
+
+APIs for Google (Calendar, Gmail), Twilio (SMS), etc.
+
+Web scraping tools for local event searches.
+
+Implementation:
+
+Email Agent: Periodically uses imaplib or Gmail API to check for new mail, summarizes it, and alerts the user to high-priority items.
+
+Calendar Agent: Manages Google Calendar for reminders.
+
+Search Agent: Scrapes local news/event sites based on user preferences from Long-Term Memory.
+
+2. Therapist & Personality
+Explanation: This is a dual-function agent. It monitors habits and behaviors to proactively check in, while also defining ARCHER's core personality, emotional intelligence (EI), and interaction style.
+
+Technical Requirements:
+
+Relies heavily on data from "Passive Observation" (Pod 3) and "Episodic Memory" (Pod 2).
+
+A sophisticated, fine-tuned LLM (or a highly complex system prompt) to define the persona.
+
+Implementation:
+
+Personality: The Orchestrator's main system prompt will be co-written by the user and this agent, defining ARCHER's base personality.
+
+Emotional Intelligence: This agent runs periodically, analyzing logs from the Observation/Memory agents. It looks for patterns ("User has seemed stressed for 3 days").
+
+Proactive Interaction: Based on these patterns, it generates a "proactive check-in" and sends it to the Orchestrator, which delivers it at an appropriate, non-routine time.
+
+Situational Awareness: This agent also provides real-time emotional context to the Orchestrator (e.g., [EI_NOTE: User sounds tired, be concise]), which modifies the LLM's response style on the fly.
+
+3. Trainer
+Explanation: Monitors nutrition and activity, interjecting with prompts for exercise or dietary course correction.
+
+Technical Requirements:
+
+Relies on "Passive Observation" (e.g., vision model identifies food) and user-reported data.
+
+A database of nutrition facts and exercise routines.
+
+Implementation:
+
+The vision model identifies food: ("User is eating a banana") -> good. ("User is eating a bag of chips") -> check goals.
+
+If an observation conflicts with goals stored in Long-Term Memory, this agent generates a gentle interjection.
+
+It also uses a timer to prompt for simple exercises ("You've been sitting for 90 minutes, let's do a 60-second stretch").
+
+4. Stock Expert
+Explanation: Stays current on financial markets to provide data and, eventually, proactive advice.
+
+Technical Requirements:
+
+Financial data APIs (e.g., yfinance for free, Alpha Vantage, or Polygon.io for paid/real-time).
+
+An LLM fine-tuned (or prompt-engineered) for financial analysis.
+
+Implementation:
+
+Reactive: This agent maintains a service that can be called by the Orchestrator to fetch real-time stock prices or news.
+
+Proactive: A separate, scheduled process monitors a user-defined portfolio or watchlist. It scans for high-volatility, earnings calls, or major news and flags them for the user.

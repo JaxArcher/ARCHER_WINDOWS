@@ -1,0 +1,35 @@
+# ARCHER Core Requirements
+# Pinned versions for compatibility
+
+# Core dependencies
+numpy==1.24.3
+torch==2.0.1
+onnxruntime-gpu==1.16.0
+sounddevice==0.4.6
+scipy==1.10.1
+
+# Audio processing
+soundfile==0.12.1
+pyannote.audio==3.1.1
+openwakeword==0.4.0
+
+# GUI and visualization
+PyQt6==6.4.0
+pyvista==0.46.4
+pyvistaqt==0.11.3
+
+# Voice processing
+webrtcvad==2.0.10
+faster-whisper==0.10.0
+
+# ML and data processing
+sentence-transformers==2.2.2
+chromadb==0.4.15
+
+# Utilities
+psutil==5.9.5
+requests==2.31.0
+pydub==0.25.1
+
+# Compatibility
+torchaudio==2.0.2
