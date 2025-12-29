@@ -1,0 +1,29 @@
+# ARCHER Advanced Features Requirements
+# Advanced & Experimental Features Developer (Agent_ADV)
+
+# Core deep learning and vision libraries
+transformers==4.35.2
+sentencepiece==0.1.99
+torchvision==0.16.1
+
+# OCR and document processing
+pytesseract==0.3.10
+pdfplumber==0.10.2
+beautifulsoup4==4.12.2
+
+# Audio and voice analysis
+librosa==0.10.1
+torchaudio==2.0.2
+
+# Additional utilities
+requests==2.31.0
+Pillow==10.1.0
+
+# For screen capture (Windows)
+pyautogui==0.9.54
+
+# For advanced NLP
+spacy==3.7.2
+
+# Note: These are in addition to core ARCHER requirements
+# Install with: pip install -r requirements_adv.txt

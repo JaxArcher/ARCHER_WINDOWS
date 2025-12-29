@@ -6,7 +6,7 @@ Ensures compliance with privacy requirements and user preferences.
 """
 
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import os
 import json
 from pathlib import Path

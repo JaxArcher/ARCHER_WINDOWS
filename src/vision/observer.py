@@ -10,6 +10,7 @@ import os
 from src.events.bus import bus
 from src.vision.camera_manager import CameraManager
 from src.performance_monitor import performance_monitor
+from src.vision.privacy_manager import privacy_manager
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +52,20 @@ class Observer(threading.Thread):
         # MediaPipe Initialization
         self.mp_pose = mp.solutions.pose
         self.mp_face_detection = mp.solutions.face_detection
+        self.mp_hands = mp.solutions.hands  # Added for gesture recognition
         self.pose = self.mp_pose.Pose()
         self.face_detection = self.mp_face_detection.FaceDetection(
             model_selection=0, min_detection_confidence=0.5
         )
+        self.hands = self.mp_hands.Hands(
+            static_image_mode=False,
+            max_num_hands=2,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
+
+        # Initialize Episodic Memory for event logging
+        self._init_memory_system()
 
         # DeepFace Model Warm-up
         logger.info("Warming up DeepFace model...")
@@ -70,6 +81,16 @@ class Observer(threading.Thread):
         # Initialize object detection
         self._init_object_detection()
 
+    def _init_memory_system(self):
+        """Initialize Episodic Memory for event logging"""
+        try:
+            from src.memory.episodic_memory import EpisodicMemory
+            self.episodic_memory = EpisodicMemory()
+            logger.info("Episodic memory initialized for vision observer")
+        except Exception as e:
+            logger.error(f"Failed to initialize episodic memory: {e}")
+            self.episodic_memory = None
+    
     def _init_object_detection(self):
         """Initialize OpenCV DNN object detection model"""
         try:
@@ -255,6 +276,107 @@ class Observer(threading.Thread):
             return f"{base_recommendation}_moderate_confidence"
         else:
             return f"{base_recommendation}_low_confidence"
+    
+    def _analyze_gestures(self, frame) -> tuple[str, float]:
+        """Analyze hand gestures using MediaPipe Hands"""
+        gesture_timer = performance_monitor.start_timer("gesture_analysis")
+        
+        try:
+            # Check privacy consent for gesture detection
+            if not privacy_manager.is_vision_allowed("gesture_detection"):
+                performance_monitor.end_timer(gesture_timer, "gesture_analysis")
+                return "UNKNOWN", 0.0
+                
+            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            hand_results = self.hands.process(image_rgb)
+            
+            if not hand_results.multi_hand_landmarks:
+                performance_monitor.end_timer(gesture_timer, "gesture_analysis")
+                return "UNKNOWN", 0.0
+                
+            # Simple gesture classification based on hand landmarks
+            # This is a basic implementation - can be enhanced with ML models
+            gestures = []
+            confidences = []
+            
+            for hand_landmarks in hand_results.multi_hand_landmarks:
+                # Get thumb and index finger positions
+                thumb_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.THUMB_TIP]
+                index_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FIP]
+                middle_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_TIP]
+                
+                # Calculate distance between thumb and index finger
+                thumb_index_dist = ((thumb_tip.x - index_tip.x)**2 + 
+                                  (thumb_tip.y - index_tip.y)**2)**0.5
+                
+                # Simple gesture detection
+                if thumb_index_dist < 0.05:  # Thumb and index close together
+                    gestures.append("PINCH")
+                    confidences.append(0.8)
+                elif thumb_tip.y < index_tip.y and thumb_tip.y < middle_tip.y:
+                    gestures.append("THUMBS_UP")
+                    confidences.append(0.7)
+                else:
+                    gestures.append("OPEN_HAND")
+                    confidences.append(0.6)
+            
+            # Return the most confident gesture
+            if gestures:
+                max_conf_idx = confidences.index(max(confidences))
+                gesture_latency = performance_monitor.end_timer(
+                    gesture_timer, "gesture_analysis"
+                )
+                logger.debug(f"Gesture analysis completed in {gesture_latency:.0f}ms")
+                return gestures[max_conf_idx], max(confidences)
+            
+        except Exception as e:
+            logger.debug(f"Gesture analysis failed: {e}")
+            
+        performance_monitor.end_timer(gesture_timer, "gesture_analysis")
+        return "UNKNOWN", 0.0
+    
+    def _get_gesture_recommendation(self, gesture: str, confidence: float) -> str:
+        """Generate advisory recommendation based on detected gesture"""
+        gesture_lower = gesture.lower()
+        
+        recommendations = {
+            "pinch": "consider_zoom_interaction",
+            "thumbs_up": "consider_positive_feedback",
+            "open_hand": "consider_greeting_response",
+            "wave": "consider_attention_request",
+            "point": "consider_direction_indication",
+        }
+        
+        base_recommendation = recommendations.get(
+            gesture_lower, "monitor_gesture"
+        )
+        
+        # Add confidence modifier
+        if confidence > 0.8:
+            return f"{base_recommendation}_high_confidence"
+        elif confidence > 0.6:
+            return f"{base_recommendation}_moderate_confidence"
+        else:
+            return f"{base_recommendation}_low_confidence"
+    
+    def _log_gesture_event(self, gesture: str, confidence: float):
+        """Log gesture event to episodic memory"""
+        if self.episodic_memory is not None:
+            try:
+                event_data = {
+                    "gesture": gesture,
+                    "confidence": confidence,
+                    "source": "vision_observer",
+                    "feature": "gesture_detection"
+                }
+                self.episodic_memory.store_event(
+                    event_type="vision_gesture",
+                    data=event_data,
+                    metadata={"agent": "agent_env", "type": "gesture"}
+                )
+                logger.debug(f"Logged gesture event to episodic memory: {gesture}")
+            except Exception as e:
+                logger.error(f"Failed to log gesture event: {e}")
 
     def run(self):
         self.running.set()
@@ -292,6 +414,9 @@ class Observer(threading.Thread):
                 )
                 current_emotion, emotion_confidence = (
                     self._analyze_emotion(frame) if is_present else ("UNKNOWN", 0.0)
+                )
+                current_gesture, gesture_confidence = (
+                    self._analyze_gestures(frame) if is_present else ("UNKNOWN", 0.0)
                 )
 
                 # Record observer frame rate
@@ -368,7 +493,47 @@ class Observer(threading.Thread):
 
                 self.last_posture = current_posture
                 self.last_emotion = current_emotion
-
+                
+                # Gesture detection and event publishing
+                if (
+                    is_present
+                    and current_gesture != "UNKNOWN"
+                    and gesture_confidence > 0.6  # Confidence threshold
+                ):
+                    if self.advisory_mode:
+                        # Advisory mode: publish observation with recommendation
+                        recommendation = self._get_gesture_recommendation(
+                            current_gesture, gesture_confidence
+                        )
+                        bus.publish(
+                            "vision.observation.gesture",
+                            {
+                                "gesture": current_gesture,
+                                "confidence": gesture_confidence,
+                                "recommendation": recommendation,
+                                "timestamp": time.time(),
+                            },
+                        )
+                        logger.info(
+                            f"ADVISORY: vision.observation.gesture ({current_gesture}, {gesture_confidence:.2f})"
+                        )
+                        
+                        # Log gesture event to episodic memory
+                        self._log_gesture_event(current_gesture, gesture_confidence)
+                    else:
+                        # Legacy direct action mode
+                        bus.publish(
+                            "vision.gesture.detected",
+                            {
+                                "gesture": current_gesture,
+                                "confidence": gesture_confidence,
+                                "timestamp": time.time(),
+                            },
+                        )
+                        logger.info(
+                            f"EVENT: vision.gesture.detected ({current_gesture}, {gesture_confidence:.2f})"
+                        )
+                
                 # End observer processing timer
                 observer_latency = performance_monitor.end_timer(
                     observer_timer, "observer_processing"
@@ -581,3 +746,5 @@ class Observer(threading.Thread):
 
     def stop(self):
         self.running.clear()
+        # Clean up MediaPipe resources
+        self.hands.close()
