@@ -16,13 +16,23 @@ import json
 # Import external libraries
 import chromadb
 from chromadb.utils import embedding_functions
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    print("Warning: sentence_transformers not available, using ChromaDB default embedding")
+
 from langdetect import detect, DetectorFactory
 from textblob import TextBlob
 import assemblyai as aai
 
 # Import ARCHER modules
-from src.memory.unified_vector_memory import UnifiedVectorMemory
+try:
+    from src.memory.unified_vector_memory import UnifiedVectorMemory
+except ImportError:
+    # Fallback for testing without full ARCHER dependencies
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -472,9 +482,9 @@ class KnowledgeBaseRAG:
         lines = context.split('\n')
         key_info = [line for line in lines if len(line) > 20]  # Simple heuristic
         
-        return f"Based on the provided context, here's what I found about '{query}':\n\n" + 
+        return (f"Based on the provided context, here's what I found about '{query}':\n\n" +
                "\n".join(key_info[:3]) + 
-               "\n\n[This is a simulated response - in production, an LLM would generate this]"
+               "\n\n[This is a simulated response - in production, an LLM would generate this]")
     
     def search_documents(self, query: str = None, 
                         filters: Optional[Dict] = None) -> List[Dict]:
