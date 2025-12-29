@@ -104,5 +104,16 @@
       "timestamp": "2025-12-28T19:37:18.011465",
       "security_level": "info"
     }
+  },
+  {
+    "event_id": "error_1766979694998",
+    "event_type": "error",
+    "timestamp": 1766979694.9984794,
+    "data": {
+      "query": "This is a test query",
+      "error": "Agent 'assistant' not found",
+      "timestamp": "2025-12-28T19:41:34.997361"
+    },
+    "metadata": {}
   }
 ]

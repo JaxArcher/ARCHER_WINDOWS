@@ -1,0 +1,29 @@
+# ARCHER Environmental Interaction Developer Requirements
+# Agent_ENV - Vision System Dependencies
+
+# Core vision libraries
+opencv-python>=4.8.0
+mediapipe>=0.10.0
+face-recognition>=1.3.0
+
+# Machine learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image processing
+numpy>=1.24.0
+pillow>=10.0.0
+
+# Object detection (YOLO)
+# Note: YOLO weights and config files should be placed in project root
+# yolov3-tiny.cfg and yolov3-tiny.weights
+
+# Deep learning for emotion detection
+deepface>=0.0.77
+
+# Performance monitoring
+psutil>=5.9.0
+
+# Type hints and development
+typing-extensions>=4.5.0
+mypy>=1.0.0

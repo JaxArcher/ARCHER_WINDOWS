@@ -44,7 +44,7 @@ def test_orchestrator_basic():
         return True
         
     except Exception as e:
-        print(f"❌ Orchestrator test failed: {e}")
+        print(f"[ERROR] Orchestrator test failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -72,7 +72,7 @@ def test_memory_systems():
         from memory.base_memory import MemoryAPI, get_memory_api
         
         memory_api = get_memory_api()
-        print(f"✅ MemoryAPI created: {memory_api}")
+        print(f"[OK] MemoryAPI created: {memory_api}")
         
         # Test unified memory operations
         mem_id = memory_api.add(
@@ -81,15 +81,15 @@ def test_memory_systems():
             memory_type="learning",
             agent_id="test_agent"
         )
-        print(f"✅ Added to unified memory: {mem_id}")
+        print(f"[OK] Added to unified memory: {mem_id}")
         
         recent = memory_api.get_recent(limit=3)
-        print(f"✅ Recent memories: {len(recent)} items")
+        print(f"[OK] Recent memories: {len(recent)} items")
         
         return True
         
     except Exception as e:
-        print(f"❌ Memory test failed: {e}")
+        print(f"[ERROR] Memory test failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -119,20 +119,20 @@ def test_agent_registration():
         # Register the agent
         test_agent = TestAgent("test_agent")
         orch.register_agent("test_agent", test_agent)
-        print(f"✅ Registered test agent")
+        print(f"[OK] Registered test agent")
         
         # Test agent info
         agent_info = orch.get_agent_info("test_agent")
-        print(f"✅ Agent info: {agent_info['name']}")
+        print(f"[OK] Agent info: {agent_info['name']}")
         
         # Test request handling
         response = orch.handle_request("This is a test query")
-        print(f"✅ Request handled: success={response['success']}")
+        print(f"[OK] Request handled: success={response['success']}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Agent registration test failed: {e}")
+        print(f"[ERROR] Agent registration test failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -158,10 +158,10 @@ def main():
     print(f"Passed: {passed}/{total}")
     
     if passed == total:
-        print("🎉 All tests passed!")
+        print("[SUCCESS] All tests passed!")
         return True
     else:
-        print("❌ Some tests failed")
+        print("[ERROR] Some tests failed")
         return False
 
 if __name__ == "__main__":

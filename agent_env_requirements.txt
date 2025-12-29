@@ -1,0 +1,766 @@
+AGENT_ENV REQUIREMENTS FROM EXCEL
+================================================================================
+
+
+AGENT NAME:
+----------
+Environmental Interaction Developer (Agent_ENV)
+
+
+ROLE & SCOPE:
+------------
+Implement computer-vision features: passive observation, pose estimation, gaze and head tracking, gesture recognition, activity recognition, object detection, and face recognition.
+
+
+DEPENDENCIES & SETUP:
+--------------------
+- Install dependencies: `pip install opencv-python mediapipe face-recognition torch torchvision numpy`.- Additional: `pip install pillow` for image processing.- Add to `requirements_env.txt`.
+
+
+CODE SKELETON & FILE NAMES:
+--------------------------
+Create `src/vision/vision_agent.py`:```pythonimport cv2import mediapipe as mpclass VisionAgent:    def __init__(self):        self.pose = mp.solutions.pose.Pose()        self.hands = mp.solutions.hands.Hands()    def process_frame(self, frame):        """Process a video frame and return detected poses, gestures, objects."""        # TODO: implement detections using mediapipe and opencv        return {}```
+
+
+EXECUTION & LOGGING INSTRUCTIONS:
+--------------------------------
+1. Work in branch `agent_env`. Install dependencies.2. Build an application within `vision_agent.py` that captures frames from the webcam, processes them to detect poses, hands, faces, and objects, and outputs structured data.3. Integrate the detection outputs with the orchestrator via a callback or message (e.g., call `orchestrator.handle_event('gesture', data)` for recognized gestures).4. Document tuning parameters (e.g., confidence thresholds) in your log file `logs/agent_env_log.md`.5. After completion, update `QC_Checklist.md` and review another module. Do not modify other modules during review.
+
+
+COMMUNICATION & QC:
+------------------
+- Use `agent_messages.md` to coordinate with the UI and orchestrator developers regarding how vision events should trigger UI updates or actions.- In your QC reviews, verify that the vision module does not lock camera resources when not in use and that it gracefully handles missing cameras.- Report any hardware limitations or performance issues in your log and to Agent_COORD.
+
+
+REPO & INVENTORY:
+----------------
+Clone repo, inspect src/vision (observer.py, emotion_detection.py, activity_recognition.py).
+
+CHECK FOR:
+- Existing vision modules
+- Current capabilities
+- Camera integration approach
+
+TEST if vision code exists:
+```python
+# Try importing existing modules
+from src.vision.observer import Observer
+```
+
+DOCUMENT in logs/agent_env_inventory.md:
+- Files found in src/vision/
+- Existing capabilities (emotion detection? activity recognition?)
+- What's missing (passive observation, pose estimation, gesture recognition, gaze tracking)
+
+INTEGRATION PLAN: Build on existing code, add missing features. Ensure Windows camera compatibility.
+
+
+ENHANCED GUIDELINES & TESTING:
+-----------------------------
+IMPLEMENT ENVIRONMENTAL PERCEPTION:
+- Passive observation (continuous monitoring)
+- Pose estimation (MediaPipe Pose)
+- Gesture recognition (MediaPipe Hands)
+- Activity classification (custom model)
+- Gaze detection (eye tracking)
+- Object tracking
+- Face recognition (with consent)
+
+MEMORY INTEGRATION (MANDATORY):
+```python
+from src.memory.episodic import EpisodicMemory
+
+class VisionAgent:
+    def __init__(self):
+        self.episodic = EpisodicMemory()
+    
+    def process_frame(self, frame):
+        # Detect pose, gestures, etc.
+        results = self.detect(frame)
+        
+        # Log events (NOT raw video)
+        if results['gesture']:
+            self.episodic.log(
+                agent="agent_env",
+                event="gesture_detected",
+                data={"gesture": results['gesture'], "confidence": results['confidence']}
+            )
+```
+
+WINDOWS CAMERA:
+- OpenCV with Windows camera indices
+- Network cameras: RTSP streams (Blue Iris)
+- Release resources: cv2.VideoCapture.release()
+
+PRIVACY CONTROLS (CRITICAL):
+```python
+class PrivacyManager:
+    def is_vision_allowed(self, feature):
+        # Check user settings
+        return feature not in self.disabled_features
+```
+
+ERROR HANDLING:
+```python
+def capture_frame(self):
+    try:
+        ret, frame = self.camera.read()
+        if not ret:
+            raise CameraError("Failed to capture")
+        return frame
+    except Exception as e:
+        logger.exception(f"Camera error: {e}")
+        return None
+```
+
+TESTING:
+- Camera access on Windows
+- Pose estimation accuracy
+- Privacy controls work
+- No resource leaks
+
+COMPLETION:
+- [ ] All features implemented
+- [ ] Privacy controls working
+- [ ] Tests passing
+
+
+================================================================================
+DEV AGENTS PLAN:
+================================================================================
+
+
+AGENT NAME:
+----------
+Environmental Interaction Developer
+
+
+ROLE/SCOPE:
+----------
+Implement environmental perception: passive observation, computer vision analysis (pose estimation, gesture and activity recognition), eye‑tracking & gaze detection, object tracking and face recognition.
+
+
+INITIAL PROMPT:
+--------------
+You are an AI coding assistant responsible for ARCHER’s environmental perception.Develop modules in `src/vision` to capture and process webcam streams using OpenCV or other vision libraries.Implement pose estimation, gesture recognition, activity classification, gaze tracking, object and face recognition.Integrate with the voice pipeline for synchronized audio‑visual cues and send events (e.g., user looking away) to the orchestrator.
+
+
+INTEGRATION APPROACH:
+--------------------
+Provide event hooks and continuous streams of detected activities to the orchestrator via asynchronous callbacks.Expose an API to enable or disable specific vision modules based on privacy settings.Synchronize timestamps with the voice pipeline for multimodal understanding.
+
+
+COMMUNICATION & COORDINATION:
+----------------------------
+Work in the `vision` branch. Coordinate with the orchestrator developer to define event schemas.Flag hardware dependencies (e.g., GPU). Ensure privacy and user consent settings are respected.
+
+
+================================================================================
+CROSS-AGENT GUIDELINES:
+================================================================================
+
+
+REPOSITORY STATE AWARENESS:
+--------------------------
+All agents MUST:
+1. Clone repository first: git clone https://github.com/JaxArcher/ARCHER_WINDOWS.git
+2. Switch to their branch: git checkout [branch-name]
+3. Review ALL existing code in their assigned area
+4. Test existing functionality using provided test scripts
+5. Document findings in logs/agent_[id]_inventory.md
+6. Create integration plan: ENHANCE existing code, do NOT rebuild from scratch
+
+CRITICAL: F5-TTS is WORKING, Orchestrator EXISTS, 9 Specialized Agents EXIST - these must continue functioning after your changes!
+
+
+WINDOWS-SPECIFIC REQUIREMENTS:
+-----------------------------
+WINDOWS-NATIVE PROJECT - All code must work on Windows 11:
+
+FILE PATHS:
+```python
+from pathlib import Path
+root = Path("D:/ARCHER_WINDOWS")  # ✅ Correct
+# NOT: root = "/home/user/ARCHER"  # ❌ Linux path
+```
+
+AUDIO LIBRARIES:
+```python
+import sounddevice as sd  # ✅ Windows playback
+import pyaudio  # ✅ Windows recording (requires binary)
+# NOT: import alsaaudio  # ❌ Linux only
+```
+
+VIRTUAL ENVIRONMENT:
+```powershell
+venv\Scripts\activate  # ✅ Windows
+# NOT: source venv/bin/activate  # ❌ Linux
+```
+
+GPU VERIFICATION:
+```python
+import torch
+assert torch.cuda.is_available(), "CUDA required!"
+print(f"Using: {torch.cuda.get_device_name(0)}")
+```
+
+
+EXISTING MULTI-AGENT SYSTEM:
+---------------------------
+ORCHESTRATOR & AGENTS ALREADY EXIST:
+
+ORCHESTRATOR: src/agents/orchestrator.py
+- READ IT COMPLETELY before making changes
+- Understand current routing logic
+- Keep it working while adding features
+
+9 SPECIALIZED AGENTS EXIST:
+1. assistant.py
+2. therapist.py  
+3. trainer.py
+4. stock_expert.py
+5. authority_manager.py
+6. evidence_processor.py
+7. federated_learning.py
+8. governance.py
+9. proactive.py
+
+YOUR JOB: ENHANCE these agents, do NOT rebuild them!
+
+Test before coding:
+```python
+from src.agents.orchestrator import Orchestrator
+orch = Orchestrator()  # Should initialize without errors
+```
+
+
+4-TIER MEMORY INTEGRATION:
+-------------------------
+ALL AGENTS MUST USE 4-TIER MEMORY SYSTEM:
+
+TIER 1: Short-term (LLM context window)
+TIER 2: Long-term (VectorMemory with ChromaDB)
+TIER 3: Episodic (EpisodicMemory with SQLite)
+TIER 4: Semantic (Knowledge graph)
+
+STANDARD INTEGRATION PATTERN:
+```python
+from src.memory.long_term import VectorMemory
+from src.memory.episodic import EpisodicMemory
+
+class YourAgent:
+    def __init__(self, agent_id: str):
+        # Each agent gets own collection
+        self.memory = VectorMemory(collection_name=f"agent_{agent_id}")
+        self.episodic = EpisodicMemory()
+    
+    def handle(self, query: str, context: dict = None):
+        # 1. Retrieve memories
+        memories = self.memory.search(query, limit=5)
+        recent = self.episodic.get_recent(agent=self.agent_id, limit=10)
+        
+        # 2. Process with memories
+        response = self.process(query, memories, recent, context)
+        
+        # 3. Store new memories
+        self.memory.add(
+            text=f"Q: {query}\nA: {response}",
+            metadata={"agent": self.agent_id, "timestamp": datetime.now().isoformat()}
+        )
+        self.episodic.log(
+            agent=self.agent_id,
+            event_type="interaction",
+            data={"query": query, "response": response}
+        )
+        
+        return response
+```
+
+MEMORY APIS (defined by Agent_ORCH):
+- VectorMemory.search(query, limit) → List[str]
+- VectorMemory.add(text, metadata) → None
+- EpisodicMemory.log(agent, event_type, data) → None
+- EpisodicMemory.get_recent(agent, limit) → List[dict]
+
+
+F5-TTS INTEGRATION CONTEXT:
+--------------------------
+F5-TTS IS WORKING - DO NOT REBUILD IT!
+
+LOCATION: src/voice/tts.py
+CLASS: F5TTSService
+
+EXISTING METHODS:
+- synthesize(text, voice_profile) → audio
+- synthesize_streaming(text) → generator
+- clone_voice(audio_sample) → voice_profile
+- set_emotion(emotion_type) → None
+
+WORKING FEATURES:
+- Text-to-speech synthesis
+- Voice cloning from samples
+- Emotional control
+- Windows audio playback
+
+YOUR JOB (Agent_V):
+ADD these features to existing F5-TTS:
+- Multi-language support (detect language, select model)
+- Filler audio (pre-recorded pondering sounds)
+- Barge-in handling (VAD + immediate kill)
+- Streaming improvements
+
+ALSO ADD (separate from F5-TTS):
+- Wake word detection (openWakeWord)
+- Voice authentication (speechbrain)
+- STT (Faster-Whisper)
+
+TEST EXISTING FIRST:
+```python
+python test_tts.py
+python test_f5tts_simple.py
+```
+
+INTEGRATION PLAN:
+1. Read tts.py completely
+2. Understand F5TTSService class
+3. Extend the class with new features
+4. Keep all existing methods working
+5. Add new methods alongside existing ones
+
+
+TESTING & VALIDATION:
+--------------------
+ALL AGENTS MUST IMPLEMENT COMPREHENSIVE TESTING:
+
+UNIT TESTS:
+```python
+# tests/agents/test_[agent_name].py
+import pytest
+from src.agents.[your_agent] import YourAgent
+
+class TestYourAgent:
+    @pytest.fixture
+    def agent(self):
+        return YourAgent()
+    
+    def test_initialization(self, agent):
+        assert agent is not None
+        assert hasattr(agent, 'handle')
+    
+    def test_basic_query(self, agent):
+        response = agent.handle("test query", {})
+        assert response is not None
+    
+    def test_memory_integration(self, agent):
+        agent.handle("remember this", {})
+        memories = agent.memory.search("remember")
+        assert len(memories) > 0
+```
+
+INTEGRATION TESTS:
+```python
+# tests/integration/test_[agent]_integration.py
+def test_orchestrator_communication(orchestrator, your_agent):
+    orchestrator.register_agent('your_name', your_agent)
+    response = orchestrator.handle_request("test")
+    assert response is not None
+```
+
+PERFORMANCE TESTS:
+```python
+import time
+
+def test_response_latency(agent):
+    start = time.time()
+    response = agent.handle("benchmark query")
+    latency = time.time() - start
+    assert latency < YOUR_TARGET_LATENCY
+```
+
+RUN TESTS:
+```bash
+# Unit tests
+pytest tests/agents/test_[agent].py -v
+
+# Integration tests
+pytest tests/integration/ -v
+
+# All tests
+pytest tests/ -v --cov=src
+```
+
+VALIDATION CHECKLIST:
+- [ ] All unit tests passing
+- [ ] Integration tests passing
+- [ ] Performance benchmarks met
+- [ ] Windows compatibility verified
+- [ ] Memory integration working
+- [ ] Error handling tested
+- [ ] Documentation complete
+
+
+ERROR HANDLING & RECOVERY:
+-------------------------
+ALL AGENTS MUST IMPLEMENT ROBUST ERROR HANDLING:
+
+EXCEPTION HIERARCHY:
+```python
+class AgentError(Exception):
+    """Base exception for agent errors."""
+    pass
+
+class InitializationError(AgentError):
+    """Agent failed to initialize."""
+    pass
+
+class ProcessingError(AgentError):
+    """Error during request processing."""
+    pass
+
+class MemoryError(AgentError):
+    """Error accessing memory system."""
+    pass
+```
+
+STANDARD PATTERN:
+```python
+import logging
+from typing import Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
+
+class YourAgent:
+    def handle(self, query: str, context: Dict = None) -> Optional[Dict[str, Any]]:
+        """Handle request with comprehensive error handling."""
+        
+        # Validate input
+        if not query or not isinstance(query, str):
+            logger.warning(f"{self.name}: Invalid query")
+            return {
+                'success': False,
+                'error': 'Invalid query format',
+                'error_type': 'validation_error'
+            }
+        
+        try:
+            # Main processing
+            result = self.process(query, context)
+            return {
+                'success': True,
+                'result': result,
+                'agent': self.name
+            }
+            
+        except ProcessingError as e:
+            logger.error(f"{self.name} processing error: {e}")
+            return {
+                'success': False,
+                'error': 'Processing failed',
+                'error_type': 'processing_error',
+                'fallback': self.get_fallback_response(query)
+            }
+            
+        except MemoryError as e:
+            logger.error(f"{self.name} memory error: {e}")
+            # Continue without memory if necessary
+            return self.process_without_memory(query, context)
+            
+        except Exception as e:
+            logger.exception(f"{self.name} unexpected error: {e}")
+            return {
+                'success': False,
+                'error': 'Internal error occurred',
+                'error_type': 'unexpected_error',
+                'fallback': self.get_safe_fallback(query)
+            }
+```
+
+FALLBACK STRATEGIES:
+```python
+def get_fallback_response(self, query: str) -> str:
+    """Multi-level fallback strategy."""
+    
+    # Level 1: Try simplified processing
+    try:
+        return self.simple_process(query)
+    except Exception:
+        pass
+    
+    # Level 2: Rule-based response
+    try:
+        return self.rule_based_response(query)
+    except Exception:
+        pass
+    
+    # Level 3: Template response
+    return f"I encountered an issue processing your request. Please try rephrasing."
+```
+
+LOGGING LEVELS:
+- DEBUG: Detailed diagnostic info
+- INFO: General operation info
+- WARNING: Unexpected but handled
+- ERROR: Error that affected operation
+- CRITICAL: System-wide failure
+
+ERROR NOTIFICATION:
+```python
+def notify_error(self, error: Exception, context: dict):
+    """Notify orchestrator of critical errors."""
+    self.episodic.log(
+        agent=self.name,
+        event_type="error",
+        data={
+            "error": str(error),
+            "error_type": type(error).__name__,
+            "context": context,
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+```
+
+
+AUTOMATION & CI/CD:
+------------------
+AUTOMATED VALIDATION & CONTINUOUS INTEGRATION:
+
+PRE-COMMIT HOOKS:
+Create .git/hooks/pre-commit:
+```bash
+#!/bin/bash
+# Run before each commit
+
+# Code style
+python -m flake8 src/ --max-line-length=120
+
+# Type checking
+python -m mypy src/ --ignore-missing-imports
+
+# Tests
+python -m pytest tests/ -v
+
+# Check for secrets
+git diff --cached --name-only | xargs grep -l "sk-" && echo "Possible API key found!" && exit 1
+
+exit 0
+```
+
+GITHUB ACTIONS WORKFLOW:
+Create .github/workflows/ci.yml:
+```yaml
+name: ARCHER CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest flake8 mypy
+    
+    - name: Lint with flake8
+      run: flake8 src/ --max-line-length=120
+    
+    - name: Type check with mypy
+      run: mypy src/ --ignore-missing-imports
+    
+    - name: Run tests
+      run: pytest tests/ -v --cov=src
+    
+    - name: Check Windows compatibility
+      run: python scripts/verify_windows_compatibility.py
+```
+
+CONTINUOUS TESTING SCRIPT:
+```python
+# tests/run_all_tests.py
+import subprocess
+import sys
+
+def run_tests():
+    """Run all test suites."""
+    
+    test_suites = [
+        ("Unit Tests", "pytest tests/agents/ -v"),
+        ("Integration Tests", "pytest tests/integration/ -v"),
+        ("Performance Tests", "pytest tests/performance/ -v"),
+    ]
+    
+    all_passed = True
+    
+    for name, command in test_suites:
+        print(f"\n{'='*60}")
+        print(f"Running: {name}")
+        print('='*60)
+        
+        result = subprocess.run(command.split(), capture_output=True)
+        
+        if result.returncode != 0:
+            print(f"❌ {name} FAILED")
+            all_passed = False
+        else:
+            print(f"✅ {name} PASSED")
+    
+    return 0 if all_passed else 1
+
+if __name__ == "__main__":
+    sys.exit(run_tests())
+```
+
+AUTOMATED VALIDATION:
+```python
+# quality_gate.py
+def check_quality_gates(component: str) -> bool:
+    """Verify component passes all quality gates."""
+    
+    gates = {
+        'code_style': check_code_style(component),
+        'type_hints': check_type_hints(component),
+        'docstrings': check_docstrings(component),
+        'tests': run_tests(component),
+        'coverage': check_coverage(component, min_coverage=80),
+        'windows_compat': check_windows_compatibility(component)
+    }
+    
+    all_passed = all(gates.values())
+    
+    # Log results
+    for gate, passed in gates.items():
+        status = "✅" if passed else "❌"
+        print(f"{status} {gate}: {'PASS' if passed else 'FAIL'}")
+    
+    return all_passed
+```
+
+
+INTEGRATION PROTOCOLS:
+---------------------
+STANDARD INTER-AGENT COMMUNICATION:
+
+AGENT MESSAGE FORMAT:
+```python
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+@dataclass
+class AgentMessage:
+    from_agent: str
+    to_agent: str
+    message_type: str  # 'request', 'response', 'notification', 'error'
+    content: Dict[str, Any]
+    timestamp: datetime = datetime.now()
+    correlation_id: Optional[str] = None
+```
+
+COMMUNICATION METHODS:
+
+1. VIA ORCHESTRATOR (Recommended):
+```python
+class YourAgent:
+    def send_to_agent(self, target_agent: str, message: dict):
+        return self.orchestrator.route_message(
+            AgentMessage(
+                from_agent=self.name,
+                to_agent=target_agent,
+                message_type='request',
+                content=message
+            )
+        )
+```
+
+2. MESSAGE QUEUE (For async):
+```python
+import zmq
+
+class AgentMessageBus:
+    def __init__(self):
+        self.context = zmq.Context()
+        self.publisher = self.context.socket(zmq.PUB)
+        self.publisher.bind("tcp://127.0.0.1:5555")
+    
+    def publish(self, topic: str, message: AgentMessage):
+        self.publisher.send_string(f"{topic} {message.to_json()}")
+```
+
+3. SHARED MEMORY (For coordination):
+```python
+class SharedContext:
+    def __init__(self):
+        self.state = {}
+        self.lock = threading.Lock()
+    
+    def update(self, key: str, value: Any):
+        with self.lock:
+            self.state[key] = value
+    
+    def get(self, key: str) -> Any:
+        with self.lock:
+            return self.state.get(key)
+```
+
+MEMORY ACCESS PROTOCOL:
+
+READ ACCESS:
+```python
+# Each agent can search global memories
+global_memories = orchestrator.long_term.search(query, limit=5)
+
+# And their own agent-specific memories
+my_memories = self.memory.search(query, limit=5)
+```
+
+WRITE ACCESS:
+```python
+# Store in agent-specific collection
+self.memory.add(
+    text="important information",
+    metadata={"agent": self.name, "category": "user_preference"}
+)
+
+# Store in shared/global (coordinate with orchestrator)
+orchestrator.store_global_memory(
+    text="system-wide information",
+    metadata={"source": self.name}
+)
+```
+
+AGENT REGISTRATION:
+```python
+class Orchestrator:
+    def register_agent(self, name: str, agent_instance, capabilities: List[str]):
+        self.agents[name] = {
+            'instance': agent_instance,
+            'capabilities': capabilities,
+            'subscriptions': []  # Topics agent subscribes to
+        }
+```
+
+SUBSCRIPTION MODEL:
+```python
+# Agent declares interests
+class YourAgent:
+    def __init__(self):
+        self.subscriptions = [
+            'user_query',
+            'system_event',
+            f'agent_{self.name}_direct'
+        ]
+    
+    def on_message(self, message: AgentMessage):
+        if message.message_type == 'request':
+            return self.handle(message.content)
+```
+
