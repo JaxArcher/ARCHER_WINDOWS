@@ -2,6 +2,7 @@
 Therapist Agent for ARCHER.
 
 Monitors user behavior and provides proactive emotional support.
+Enhanced with BaseSpecializedAgent capabilities including memory integration.
 """
 
 import logging
@@ -9,18 +10,22 @@ import time
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from src.events.bus import bus
+from .base_specialized_agent import BaseSpecializedAgent
 
 logger = logging.getLogger(__name__)
 
 
-class TherapistAgent:
+class TherapistAgent(BaseSpecializedAgent):
     """
-    Proactive behavioral monitoring and emotional support agent.
+    Proactive behavioral monitoring and emotional support agent with enhanced capabilities.
 
-    MVP Features:
+    Features:
     - Monitors user mood from vision data
     - Triggers check-ins based on patterns
     - Tracks emotional trends
+    - Memory integration (VectorMemory + EpisodicMemory)
+    - Standardized handle() interface
+    - Error handling and fallback strategies
     """
 
     def __init__(self, llm_router, memory):
@@ -31,8 +36,12 @@ class TherapistAgent:
             llm_router: LLM router for generating responses
             memory: Semantic memory for tracking history
         """
+        # Initialize base class
+        super().__init__(name="therapist", agent_id="therapist")
+        
+        # Set up LLM and semantic memory
         self.llm = llm_router
-        self.memory = memory
+        self.semantic_memory = memory
 
         # Mood tracking
         self.mood_history = []
@@ -70,7 +79,7 @@ class TherapistAgent:
             },  # Sunday evening
         }
 
-        logger.info("Therapist agent initialized")
+        logger.info("Enhanced Therapist Agent initialized with memory integration")
 
     def process_vision_event(self, event_type: str, data: Dict[str, Any]):
         """
@@ -361,3 +370,71 @@ class TherapistAgent:
             "mood_counts": mood_counts,
             "total_observations": len(recent_moods),
         }
+    
+    def process(self, query: str, context: Dict[str, Any]) -> str:
+        """
+        Process therapist queries using the standardized interface.
+        
+        Args:
+            query: User query
+            context: Additional context
+            
+        Returns:
+            Processed response
+        """
+        try:
+            # Get recent memories for emotional context
+            recent_memories = self.get_recent_memories(limit=3)
+            memory_context = "\n".join(recent_memories) if recent_memories else ""
+            
+            # Get current mood summary
+            mood_summary = self.get_mood_summary()
+            mood_context = f"Current mood: {mood_summary.get('dominant_mood', 'neutral')}" if mood_summary else ""
+            
+            # Combine with semantic memory context
+            semantic_context = self.semantic_memory.get_context_for_llm() if hasattr(self.semantic_memory, 'get_context_for_llm') else {}
+            
+            # Create enhanced context
+            enhanced_context = {
+                **context,
+                "memory_context": memory_context,
+                "mood_context": mood_context,
+                "semantic_context": semantic_context,
+                "agent": "therapist"
+            }
+            
+            # Get response from LLM with therapeutic focus
+            response = self.llm.get_response(
+                query,
+                role="therapist",
+                context=enhanced_context
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Therapist processing error: {e}")
+            raise ProcessingError(f"Failed to process therapist query: {e}")
+    
+    def simple_process(self, query: str) -> str:
+        """
+        Simplified processing for fallback.
+        """
+        return f"I understand you're feeling {query}. I'm here to listen and support you."
+    
+    def rule_based_response(self, query: str) -> str:
+        """
+        Rule-based response for fallback.
+        """
+        query_lower = query.lower()
+        
+        if any(word in query_lower for word in ["stressed", "anxious", "worried"]):
+            return "I notice you're feeling stressed. Would you like to talk about what's on your mind?"
+        elif any(word in query_lower for word in ["sad", "depressed", "down"]):
+            return "I'm sorry you're feeling sad. Would you like to share what's bothering you?"
+        elif any(word in query_lower for word in ["angry", "frustrated", "mad"]):
+            return "I can see you're feeling angry. Sometimes talking about it helps. Would you like to share?"
+        elif any(word in query_lower for word in ["happy", "joyful", "excited"]):
+            return "That's wonderful to hear! What's making you feel happy today?"
+        else:
+            return "I'm here to listen and support you. How are you feeling right now?"

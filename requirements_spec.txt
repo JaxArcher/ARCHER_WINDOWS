@@ -1,0 +1,46 @@
+# ARCHER Specialized Agents Requirements
+
+# LLM Libraries (choose one that's permitted)
+# openai==1.12.0
+# anthropic==0.25.0
+# tiktoken==0.6.0
+
+# Retrieval Libraries
+chromadb==0.4.15
+
+# Scheduling and Finance
+pandas==2.3.3
+yfinance==0.2.36
+
+# Core dependencies (already in main requirements.txt)
+# numpy==1.24.3
+# torch==2.0.1
+# onnxruntime-gpu==1.16.0
+
+# Memory and data processing
+sentence-transformers==2.2.2
+
+# Utilities
+requests==2.31.0
+python-dateutil==2.9.0
+pytz==2025.2
+
+# For R&D Agent
+arxiv==2.1.0
+scholarly==1.7.11
+
+# For Learning Coach
+spacy==3.7.4
+textblob==0.17.1
+
+# For Productivity Coach
+python-crontab==3.0.0
+schedule==1.2.1
+
+# For Social Relationship Manager
+networkx==3.2.1
+community==1.0.0
+
+# For Creative Collaborator
+Pillow==10.3.0
+matplotlib==3.8.4

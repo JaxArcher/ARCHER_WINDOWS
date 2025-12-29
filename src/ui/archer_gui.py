@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
 from .orb_animation import OrbAnimation
+from src.events.bus import bus
 
 class ARCHERGUI(QMainWindow):
     """Main ARCHER GUI with complete interface"""
@@ -162,7 +163,7 @@ class ARCHERGUI(QMainWindow):
         """)
         
         # Main quadrant layout
-        main_layout = QHBoxLayout()
+        main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(15)
         
@@ -174,8 +175,8 @@ class ARCHERGUI(QMainWindow):
         q1_frame = self._create_quadrant("Voice Pipeline", "🎤 Active", "#3498db")
         top_layout.addWidget(q1_frame, 1)
         
-        # Quadrant 2: Vision Status
-        q2_frame = self._create_quadrant("Vision System", "👁️ Disabled", "#e74c3c")
+        # Quadrant 2: Vision System with Orb Animation
+        q2_frame = self._create_orb_quadrant()
         top_layout.addWidget(q2_frame, 1)
         
         # Bottom quadrants
@@ -244,24 +245,51 @@ class ARCHERGUI(QMainWindow):
         frame.setLayout(layout)
         return frame
     
-    def _init_orb_animation(self):
-        """Initialize 3D orb animation"""
-        # Create orb animation widget
+    def _create_orb_quadrant(self):
+        """Create quadrant with 3D orb animation"""
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 5px;
+                border: 2px solid #e74c3c;
+                padding: 15px;
+            }
+            QLabel#title {
+                font-size: 16px;
+                font-weight: bold;
+                color: #e74c3c;
+            }
+        """)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
+        
+        title_label = QLabel("Vision System & Orb")
+        title_label.setObjectName("title")
+        layout.addWidget(title_label)
+        
+        # Add orb animation
         self.orb_animation = OrbAnimation()
+        self.orb_animation.setMinimumSize(250, 250)
+        self.orb_animation.setMaximumSize(350, 350)
+        layout.addWidget(self.orb_animation, 0, Qt.AlignmentFlag.AlignCenter)
         
-        # Replace the basic quadrant 2 with orb animation
-        # Find and replace the vision status quadrant with orb
-        for i in range(self.quadrants_layout.count()):
-            widget = self.quadrants_layout.itemAt(i).widget()
-            if widget and hasattr(widget, 'findChild'):
-                # This is a simplified approach - in a real implementation,
-                # we would need to properly integrate the orb into the quadrant layout
-                pass
+        # Status label below orb
+        self.orb_status_label = QLabel("Orb State: idle")
+        self.orb_status_label.setStyleSheet("font-size: 12px; color: #7f8c8d;")
+        layout.addWidget(self.orb_status_label, 0, Qt.AlignmentFlag.AlignCenter)
         
-        # For now, we'll add the orb as a separate element
-        # This will be refined in the next iteration
-        self.orb_animation.setMinimumSize(300, 300)
-        self.orb_animation.setMaximumSize(400, 400)
+        frame.setLayout(layout)
+        return frame
+    
+    def _init_orb_animation(self):
+        """Initialize 3D orb animation - now handled in _create_orb_quadrant"""
+        # Orb is now created in _create_orb_quadrant method
+        # This method kept for backward compatibility
+        pass
     
     def _create_response_quadrant(self):
         """Create response display quadrant"""
@@ -380,16 +408,20 @@ class ARCHERGUI(QMainWindow):
         
         status_frame.setLayout(layout)
         return status_frame
-    
-def _connect_signals(self):
+    def _connect_signals(self):
         """Connect UI signals"""
         # Connect input field
         self.input_field.returnPressed.connect(self._on_input_submitted)
         
         # Subscribe to assistant responses
-        # TODO: Add event bus when available
-        pass
         bus.subscribe("assistant.response", self.add_response)
+        
+        # Subscribe to orb state changes
+        bus.subscribe("orb.state", self.set_orb_state)
+        
+        # Subscribe to transcription updates
+        bus.subscribe("transcription.update", self.add_transcription)
+        bus.subscribe("transcription.clear", self.clear_transcription)
     
     def _on_input_submitted(self):
         """Handle user input submission"""
@@ -444,6 +476,10 @@ def _connect_signals(self):
             
             if state in state_messages:
                 self.update_status(state_messages[state])
+            
+            # Update orb status label
+            if hasattr(self, 'orb_status_label'):
+                self.orb_status_label.setText(f"Orb State: {state}")
     
     def get_orb_state(self):
         """Get current orb state"""

@@ -2,6 +2,7 @@
 Assistant Agent for ARCHER.
 
 Provides general assistance, reminders, search, and communication management.
+Enhanced with BaseSpecializedAgent capabilities including memory integration.
 """
 
 import logging
@@ -12,13 +13,14 @@ from datetime import datetime, timedelta
 from src.llm.router import LLMRouter
 from src.memory.semantic_memory import SemanticMemory
 from src.events.bus import bus
+from .base_specialized_agent import BaseSpecializedAgent
 
 logger = logging.getLogger(__name__)
 
 
-class AssistantAgent:
+class AssistantAgent(BaseSpecializedAgent):
     """
-    General-purpose assistant agent.
+    General-purpose assistant agent with enhanced capabilities.
 
     Features:
     - Context-aware reminders
@@ -26,11 +28,18 @@ class AssistantAgent:
     - Email/text monitoring and drafting
     - Calendar integration
     - Proactive suggestions
+    - Memory integration (VectorMemory + EpisodicMemory)
+    - Standardized handle() interface
+    - Error handling and fallback strategies
     """
 
     def __init__(self, llm_router: LLMRouter, memory: SemanticMemory):
+        # Initialize base class
+        super().__init__(name="assistant", agent_id="assistant")
+        
+        # Set up LLM and semantic memory
         self.llm = llm_router
-        self.memory = memory
+        self.semantic_memory = memory
 
         # Integrations
         self.email_enabled = os.getenv("EMAIL_INTEGRATION", "false").lower() == "true"
@@ -49,7 +58,7 @@ class AssistantAgent:
         bus.subscribe("voice.user_speech_end", self.process_user_query)
         bus.subscribe("vision.user.arrived", self.handle_user_arrival)
 
-        logger.info("Assistant Agent initialized")
+        logger.info("Enhanced Assistant Agent initialized with memory integration")
 
     def process_user_query(self, event_data: Dict[str, Any]):
         """Process general user queries."""
@@ -301,3 +310,72 @@ class AssistantAgent:
     def draft_text(self, recipient: str, message: str) -> str:
         """Draft a text message."""
         return f"To: {recipient}\n{message}"
+    
+    def process(self, query: str, context: Dict[str, Any]) -> str:
+        """
+        Process assistant queries using the standardized interface.
+        
+        Args:
+            query: User query
+            context: Additional context
+            
+        Returns:
+            Processed response
+        """
+        # Use the existing handle_assistant_query method
+        try:
+            # Get recent memories to provide context
+            recent_memories = self.get_recent_memories(limit=3)
+            memory_context = "\n".join(recent_memories) if recent_memories else ""
+            
+            # Combine with semantic memory context
+            semantic_context = self.semantic_memory.get_context_for_llm()
+            
+            # Create enhanced context
+            enhanced_context = {
+                **context,
+                "memory_context": memory_context,
+                "semantic_context": semantic_context,
+                "capabilities": self.get_capabilities()
+            }
+            
+            # Get response from LLM
+            response = self.llm.get_response(
+                query,
+                role="assistant",
+                context=enhanced_context
+            )
+            
+            # Check if response requires verification
+            if self._requires_verification(response):
+                if not self.llm.verify_action(f"Assistant action: {response}"):
+                    response = "I'm sorry, but I cannot perform that action due to safety verification."
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Assistant processing error: {e}")
+            raise ProcessingError(f"Failed to process assistant query: {e}")
+    
+    def simple_process(self, query: str) -> str:
+        """
+        Simplified processing for fallback.
+        """
+        return f"I understand you need help with: {query}. Let me assist you."
+    
+    def rule_based_response(self, query: str) -> str:
+        """
+        Rule-based response for fallback.
+        """
+        query_lower = query.lower()
+        
+        if "remind" in query_lower:
+            return "I can set reminders for you. What would you like me to remind you about?"
+        elif "email" in query_lower:
+            return "I can help with emails. Who would you like to email and what's the message?"
+        elif "search" in query_lower:
+            return "I can search for information. What are you looking for?"
+        elif "calendar" in query_lower or "schedule" in query_lower:
+            return "I can help with scheduling. What would you like to schedule?"
+        else:
+            return "I can help with that. Let me think about the best way to assist you."

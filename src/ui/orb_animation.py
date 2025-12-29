@@ -88,16 +88,19 @@ class OrbAnimation(QWidget):
         current_radius = self.radius + self.pulse_offset
         self.orb.radius = current_radius
         
-        # Update mesh
-        self.actor.SetScale(current_radius, current_radius, current_radius)
-        
-        # Refresh plotter
+        # Update the plotter with the modified orb
         self.plotter.update()
     
     def _update_orb_appearance(self):
         """Update orb appearance based on current state"""
         color = self.state_colors.get(self.current_state, "#808080")
-        self.actor.SetColor(color)
+        
+        # Update orb color using PyVista's current API
+        self.orb.color = color
+        
+        # Update the actor with the new mesh
+        self.plotter.update_scalar_bar_range([0, 1])
+        self.plotter.update()
         
         # State-specific animation parameters
         if self.current_state == "idle":

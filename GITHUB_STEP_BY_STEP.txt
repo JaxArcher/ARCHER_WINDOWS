@@ -1,0 +1,130 @@
+=============================================================================
+                    GITHUB CONNECTION - STEP BY STEP GUIDE
+=============================================================================
+
+STEP 1: CREATE GITHUB REPOSITORY
+----------------------------------
+1. Open your web browser
+2. Go to: https://github.com/new
+3. Log in to your GitHub account if needed
+4. Fill out the form:
+   - Repository name: ARCHER_WINDOWS
+   - Description: ARCHER AI Windows Project (optional)
+   - Public/Private: Select Private (recommended)
+   - Leave all checkboxes unchecked
+5. Click the green "Create repository" button
+
+STEP 2: OPEN POWERSHELL OR COMMAND PROMPT
+------------------------------------------
+1. Press Windows key + R on your keyboard
+2. Type: powershell (recommended) OR cmd
+3. Press Enter
+
+STEP 3: NAVIGATE TO ARCHER_WINDOWS FOLDER
+------------------------------------------
+In POWERSHELL (recommended):
+cd D:\ARCHER_WINDOWS
+
+In COMMAND PROMPT:
+cd /d D:\ARCHER_WINDOWS
+
+(If your folder is on a different drive, adjust the command)
+
+STEP 4: CONNECT TO GITHUB
+--------------------------
+Type these commands one by one, pressing Enter after each:
+
+1. git remote add origin https://github.com/your-username/ARCHER_WINDOWS.git
+   (Replace "your-username" with your actual GitHub username)
+
+2. git branch -M main
+
+3. git push -u origin main
+
+STEP 5: AUTHENTICATION
+-----------------------
+When you run the push command, GitHub will ask for:
+- Username: Your GitHub username
+- Password: Your GitHub password OR personal access token
+
+IMPORTANT: If you have 2-factor authentication enabled on GitHub,
+you MUST use a personal access token instead of your password.
+
+STEP 6: VERIFY CONNECTION
+--------------------------
+Type this command to check if it worked:
+git remote -v
+
+You should see your GitHub repository URL listed.
+
+STEP 7: CHECK GITHUB
+---------------------
+1. Go back to your web browser
+2. Refresh your GitHub repository page
+3. You should see all your ARCHER_WINDOWS files!
+
+=============================================================================
+                         TROUBLESHOOTING TIPS
+=============================================================================
+
+PROBLEM: Authentication failed
+SOLUTION: Use a personal access token instead of password
+HOW TO: 
+1. Go to GitHub → Settings → Developer settings → Personal access tokens
+2. Generate new token with "repo" permissions
+3. Use this token as your password
+
+PROBLEM: Repository not found
+SOLUTION: Check that the repository name is exactly the same on GitHub
+
+PROBLEM: Branch 'main' not found
+SOLUTION: Run "git branch -M main" before pushing
+
+PROBLEM: Permission denied
+SOLUTION: Either use HTTPS or set up SSH keys properly
+
+=============================================================================
+                    AFTER SUCCESSFUL CONNECTION
+=============================================================================
+
+NORMAL WORKFLOW:
+1. Make changes to your files
+2. git add .
+3. git commit -m "Describe your changes"
+4. git push
+
+TO UPDATE FROM GITHUB:
+git pull
+
+TO CHECK STATUS:
+git status
+
+TO SEE YOUR COMMITS:
+git log --oneline
+
+=============================================================================
+                         QUICK REFERENCE COMMANDS
+=============================================================================
+
+Navigate to folder:
+cd /d D:\ARCHER_WINDOWS
+
+Check connection:
+git remote -v
+
+Add files:
+git add .
+
+Commit changes:
+git commit -m "Your message"
+
+Push to GitHub:
+git push
+
+Pull from GitHub:
+git pull
+
+Check status:
+git status
+
+=============================================================================
