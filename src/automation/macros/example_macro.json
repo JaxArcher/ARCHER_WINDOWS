@@ -1,0 +1,53 @@
+{
+  "name": "example_macro",
+  "actions": [
+    {
+      "type": "mouse_move",
+      "params": {
+        "x": 100,
+        "y": 100,
+        "duration": 0.5
+      },
+      "timestamp": "2025-12-28T20:45:00.000000"
+    },
+    {
+      "type": "delay",
+      "params": {
+        "seconds": 0.1
+      },
+      "timestamp": "2025-12-28T20:45:00.100000"
+    },
+    {
+      "type": "mouse_click",
+      "params": {
+        "button": "left"
+      },
+      "timestamp": "2025-12-28T20:45:00.200000"
+    },
+    {
+      "type": "keyboard_type",
+      "params": {
+        "text": "Hello from ARCHER Automation!",
+        "interval": 0.05
+      },
+      "timestamp": "2025-12-28T20:45:00.500000"
+    },
+    {
+      "type": "delay",
+      "params": {
+        "seconds": 0.2
+      },
+      "timestamp": "2025-12-28T20:45:00.700000"
+    },
+    {
+      "type": "keyboard_press",
+      "params": {
+        "key": "enter"
+      },
+      "timestamp": "2025-12-28T20:45:00.900000"
+    }
+  ],
+  "timestamp": "2025-12-28T20:45:00.000000",
+  "action_count": 6,
+  "description": "Example macro demonstrating mouse movement, clicking, and keyboard typing"
+}

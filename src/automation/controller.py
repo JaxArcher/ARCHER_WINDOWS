@@ -769,12 +769,17 @@ class AutomationController:
             return info
             
         except ImportError:
-            logger.warning("psutil not available - limited system info")
-            return {
-                "os": platform.system(),
-                "os_version": platform.version(),
-                "warning": "psutil not installed - install for full system info"
-            }
+            try:
+                import platform
+                logger.warning("psutil not available - limited system info")
+                return {
+                    "os": platform.system(),
+                    "os_version": platform.version(),
+                    "warning": "psutil not installed - install for full system info"
+                }
+            except Exception as e:
+                logger.error(f"Failed to get even basic system info: {e}")
+                return {"error": f"Platform module error: {e}"}
         except Exception as e:
             logger.error(f"Failed to get system info: {e}")
             return {"error": str(e)}

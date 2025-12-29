@@ -1,0 +1,16 @@
+{
+  "name": "high_cpu_alert",
+  "condition": {
+    "type": "system_load",
+    "threshold": 90
+  },
+  "action": {
+    "type": "log_message",
+    "message": "High CPU load detected! Current load exceeds 90%"
+  },
+  "enabled": true,
+  "created_at": "2025-12-28T20:50:00.000000",
+  "last_triggered": null,
+  "trigger_count": 0,
+  "description": "Alerts when CPU load exceeds 90%"
+}

@@ -1,0 +1,108 @@
+[
+  {
+    "event_id": "automation_initialization_1766979425105",
+    "event_type": "automation_initialization",
+    "timestamp": 1766979425.1051493,
+    "data": {
+      "status": "success"
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:05.103953",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_file_list_1766979425107",
+    "event_type": "automation_file_list",
+    "timestamp": 1766979425.107243,
+    "data": {
+      "directory": ".",
+      "pattern": "*.py",
+      "count": 40
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:05.107177",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_initialization_1766979437865",
+    "event_type": "automation_initialization",
+    "timestamp": 1766979437.8656092,
+    "data": {
+      "status": "success"
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:17.864388",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_file_list_1766979437867",
+    "event_type": "automation_file_list",
+    "timestamp": 1766979437.867501,
+    "data": {
+      "directory": ".",
+      "pattern": "*.py",
+      "count": 40
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:17.867436",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_macro_start_1766979437908",
+    "event_type": "automation_macro_start",
+    "timestamp": 1766979437.9089866,
+    "data": {},
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:17.908915",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_macro_stop_1766979438009",
+    "event_type": "automation_macro_stop",
+    "timestamp": 1766979438.009998,
+    "data": {
+      "actions": 0
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:18.009912",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_security_change_1766979438010",
+    "event_type": "automation_security_change",
+    "timestamp": 1766979438.0107648,
+    "data": {
+      "enabled": true
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:18.010711",
+      "security_level": "info"
+    }
+  },
+  {
+    "event_id": "automation_halt_1766979438011",
+    "event_type": "automation_halt",
+    "timestamp": 1766979438.0115192,
+    "data": {
+      "status": "success"
+    },
+    "metadata": {
+      "agent": "agent_auto",
+      "timestamp": "2025-12-28T19:37:18.011465",
+      "security_level": "info"
+    }
+  }
+]

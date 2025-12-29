@@ -54,8 +54,6 @@ class OrbAnimation(QWidget):
         self.actor = self.plotter.add_mesh(
             self.orb, 
             color=self.state_colors[self.current_state],
-            specular=0.5,
-            specular_power=30,
             smooth_shading=True
         )
         
@@ -95,12 +93,13 @@ class OrbAnimation(QWidget):
         """Update orb appearance based on current state"""
         color = self.state_colors.get(self.current_state, "#808080")
         
-        # Update orb color using PyVista's current API
-        self.orb.color = color
-        
-        # Update the actor with the new mesh
-        self.plotter.update_scalar_bar_range([0, 1])
-        self.plotter.update()
+        # Remove and re-add the orb with new color (PyVista approach)
+        self.plotter.remove_actor(self.actor)
+        self.actor = self.plotter.add_mesh(
+            self.orb, 
+            color=color,
+            smooth_shading=True
+        )
         
         # State-specific animation parameters
         if self.current_state == "idle":
